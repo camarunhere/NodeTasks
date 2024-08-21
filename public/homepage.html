@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        .container { max-width: 800px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Registered Users</h2>
+        <ul id="userList" class="list-group">
+            <!-- User list will be populated here -->
+        </ul>
+    </div>
+
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+        function loadUsers() {
+            fetch('/users')
+                .then(response => response.json())
+                .then(data => {
+                    const userList = document.getElementById('userList');
+                    userList.innerHTML = ''; // Clear existing list
+                    if (data.users.length > 0) {
+                        data.users.forEach(user => {
+                            const userItem = document.createElement('li');
+                            userItem.className = 'list-group-item';
+                            userItem.innerHTML = `
+                                ${user.name} (${user.email}) - ${user.profession}
+                                <button class="btn btn-warning btn-sm float-right ml-2" onclick="editUser('${user._id}')">Edit</button>
+                                <button class="btn btn-danger btn-sm float-right" onclick="deleteUser('${user._id}')">Delete</button>
+                            `;
+                            userList.appendChild(userItem);
+                        });
+                    } else {
+                        userList.innerHTML = '<li class="list-group-item">No users found</li>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching users:', error);
+                    const userList = document.getElementById('userList');
+                    userList.innerHTML = '<li class="list-group-item">Error fetching users</li>';
+                });
+        }
+
+        function editUser(userId) {
+            const name = prompt('Enter new name:');
+            const phone = prompt('Enter new phone number:');
+            if (name && phone) {
+                fetch(`/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadUsers();
+                    } else {
+                        alert('Failed to update user: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating user:', error);
+                    alert('Error updating user');
+                });
+            }
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/users/${userId}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadUsers();
+                    } else {
+                        alert('Failed to delete user: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting user:', error);
+                    alert('Error deleting user');
+                });
+            }
+        }
+
+        // Load users on page load
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+</html>
